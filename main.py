@@ -1,15 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,HTTPException
 import re
 from pydantic import BaseModel, Field
 from keras.models import load_model
 import pickle
 from contextlib import asynccontextmanager
-
-app = FastAPI()
-
-@app.get('/')
-def greet():
-    return{'Hello Nitish...'}
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 """
 1. We are going to make some constants like:
@@ -102,7 +99,52 @@ async def lifespan(app: FastAPI):
 
 """
 5. Mount the static files to the FastAPI app
+A. Enable CORS (Cross-Origin Resource Sharing) to allow requests from different origins.
 """
+app = FastAPI()
+app.add_middleware(
+     CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.mount('/static', StaticFiles(directory="static"), name="static")
+
+"""
+6. API Endpoints
+A. Server UI at homepage ('/')
+B. Health Check Endpoint ('/health')
+C. Predict Emotion Endpoint ('/predict')
+"""
+#A. Server UI at homepage ('/')
+@app.get('/', include_in_schema=False)
+def server_ui():
+    return FileResponse('static/index.html')
+
+#B. Health Check Endpoint ('/health')
+@app.get('/health', response_model=HealthResponse)
+def health_check():
+    return HealthResponse(status="Server is running", model_loaded=bool(dl_model))
+
+#C. Predict Emotion Endpoint ('/predict')
+@app.post('/predict', response_model=PredictionResponse)
+def predict_emotion(text_input: TextInput):
+    """
+    1. Cleans the input sentences.
+    2. Convert the words into numeric using tokenizer.
+    3. Pad the sequences to ensure uniform length.
+    4. Run prediction using the BiGRU model.
+    5. Return the top emotion and full probability breakdown.
+    """
+    BiGRU_model     = dl_model.get("BiGRU")
+    tokenizer_model = dl_model.get("Tokenizer")
+
+    if BiGRU_model is None or tokenizer_model is None:
+        raise HTTPException(status_code=503, detail="Model or tokenizer not loaded. Please try again later.")
+    
+
 
 
     
