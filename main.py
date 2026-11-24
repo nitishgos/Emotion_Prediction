@@ -7,6 +7,9 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+import numpy as np
 
 """
 1. We are going to make some constants like:
@@ -101,7 +104,9 @@ async def lifespan(app: FastAPI):
 5. Mount the static files to the FastAPI app
 A. Enable CORS (Cross-Origin Resource Sharing) to allow requests from different origins.
 """
-app = FastAPI()
+app = FastAPI(
+    lifespan=lifespan
+)
 app.add_middleware(
      CORSMiddleware,
     allow_origins=["*"],
@@ -143,8 +148,26 @@ def predict_emotion(text_input: TextInput):
 
     if BiGRU_model is None or tokenizer_model is None:
         raise HTTPException(status_code=503, detail="Model or tokenizer not loaded. Please try again later.")
-    
 
-
-
+    #1.
+    cleaned_text= preprocess_text(text_input.text)
+    #2 and 3.
+    tokenized_text=tokenizer_model.texts_to_sequences([cleaned_text])
+    padded_sequence = pad_sequences(
+        tokenized_text,
+        maxlen=max_sequence_length,
+        padding="post",
+        truncating="post"
+    )
+    probabilites     = BiGRU_model.predict(padded_sequence)[0]
+    top_emotion_index = int(np.argmax(probabilites))
+    all_probabilites={
+        label: float(prob) for prob, label in zip(probabilites, emotion_labels)
+    }
+    return PredictionResponse(
+        text = text_input.text,
+        predicted_emotion = emotion_labels[top_emotion_index],
+        confidence = float(probabilites[top_emotion_index]), 
+        all_probabilites = all_probabilites
+    )
     

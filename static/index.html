@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Moodscope — Emotion Detection</title>
+  <meta name="description" content="Type a sentence and watch a BiGRU neural network read the emotion inside it." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body data-emotion="idle">
+  <canvas id="bg"></canvas>
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <div class="grain"></div>
+  <div class="cursor-glow" id="cursorGlow"></div>
+
+  <main class="shell">
+    <header class="top">
+      <div class="brand">
+        <span class="logo" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>moodscope</span>
+      </div>
+      <div class="status" id="status" title="Server health">
+        <span class="dot"></span><span id="statusText">connecting…</span>
+      </div>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">BiGRU · Emotion Classifier</p>
+      <h1>What is this sentence <span class="shift" id="shiftWord">feeling</span>?</h1>
+      <p class="sub">Write anything. A neural network reads it and tells you which of six emotions is hiding inside.</p>
+    </section>
+
+    <section class="stage">
+      <!-- INPUT CARD -->
+      <div class="card input-card tilt" id="inputCard">
+        <div class="card-glow"></div>
+        <label for="text" class="label">Your sentence</label>
+        <div class="field">
+          <textarea id="text" maxlength="2000" rows="5" spellcheck="false"
+            placeholder="I feel so happy and excited…"></textarea>
+          <div class="field-foot">
+            <span class="hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to analyze</span>
+            <span class="count"><b id="count">0</b> / 2000</span>
+          </div>
+        </div>
+
+        <div class="chips" id="chips"></div>
+
+        <div class="actions">
+          <button class="btn ghost" id="clearBtn" type="button">Clear</button>
+          <button class="btn primary" id="analyzeBtn" type="button">
+            <span class="btn-label">Analyze emotion</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+            <span class="btn-shine"></span>
+          </button>
+        </div>
+        <p class="error" id="error" role="alert" hidden></p>
+      </div>
+
+      <!-- RESULT CARD -->
+      <div class="card result-card tilt" id="resultCard">
+        <div class="card-glow"></div>
+
+        <div class="placeholder" id="placeholder">
+          <div class="ph-faces">
+            <span>😢</span><span>😄</span><span>❤️</span><span>😠</span><span>😨</span><span>😲</span>
+          </div>
+          <p>Your result will appear here.</p>
+        </div>
+
+        <div class="result" id="result" hidden>
+          <div class="verdict">
+            <div class="ring-wrap">
+              <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="ring-bg" cx="60" cy="60" r="52" />
+                <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52" />
+              </svg>
+              <div class="emoji" id="emoji">😄</div>
+            </div>
+            <div class="verdict-text">
+              <span class="tag">Detected emotion</span>
+              <h2 id="emotionName">Joy</h2>
+              <div class="conf"><b id="confNum">0</b><small>% confident</small></div>
+            </div>
+          </div>
+
+          <div class="bars" id="bars"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="history" id="historyWrap" hidden>
+      <div class="history-head">
+        <h3>Recent</h3>
+        <button class="link" id="clearHistory" type="button">clear history</button>
+      </div>
+      <ul id="history"></ul>
+    </section>
+
+    <footer class="foot">Built with FastAPI · Keras · a lot of tiny animations</footer>
+  </main>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
