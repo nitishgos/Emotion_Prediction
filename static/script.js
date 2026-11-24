@@ -58,30 +58,16 @@
   }
 
   /* ---------- health ---------- */
-  function setStatus(kind, text) {
-    el.status.className = "status " + kind;
-    el.statusText.textContent = text;
-  }
-
-  async function checkHealth(attempt = 0) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 10000);
+  async function checkHealth() {
     try {
-      const r = await fetch("/health?_=" + Date.now(), { cache: "no-store", signal: ctrl.signal });
-      clearTimeout(timer);
+      const r = await fetch("/health");
       const d = await r.json();
-      if (r.ok && d.model_loaded) setStatus("ok", "model ready");
-      else if (r.ok) setStatus("bad", "model not loaded");
-      else throw new Error("bad status " + r.status);
+      const ok = r.ok && d.model_loaded;
+      el.status.className = "status " + (ok ? "ok" : "bad");
+      el.statusText.textContent = ok ? "model ready" : "model not loaded";
     } catch {
-      clearTimeout(timer);
-      // Retry a few times (server may be waking up) before showing offline
-      if (attempt < 3) {
-        setStatus("", "connecting…");
-        setTimeout(() => checkHealth(attempt + 1), 2000 * (attempt + 1));
-      } else {
-        setStatus("bad", "server offline");
-      }
+      el.status.className = "status bad";
+      el.statusText.textContent = "server offline";
     }
   }
 
@@ -145,7 +131,6 @@
         throw new Error(msg);
       }
       const data = await res.json();
-      setStatus("ok", "model ready"); // a successful prediction proves the server is up
       // tiny minimum delay so the spinner feels intentional
       const wait = Math.max(0, 450 - (performance.now() - started));
       await new Promise((r) => setTimeout(r, wait));
@@ -370,7 +355,5 @@
   }, 2600);
 
   checkHealth();
-  setInterval(() => checkHealth(), 30000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkHealth(); });
-  window.addEventListener("online", () => checkHealth());
+  setInterval(checkHealth, 30000);
 })();
